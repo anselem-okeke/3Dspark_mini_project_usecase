@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: spark
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: spark
+spec:
+  progressDeadlineSeconds: 1800
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.4.7
+          args: ["start-dev"]
+          ports:
+            - containerPort: 8080
+              name: http
+
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            failureThreshold: 240
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 1
+
+          readinessProbe:
+            httpGet:
+              path: /realms/master
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 30
+
+          env:
+            # Bootstrap admin user (official Keycloak way)
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin
+                  key: username
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin
+                  key: password
+
+            # Database config (official env vars)
+            - name: KC_DB
+              value: postgres
+            - name: KC_DB_URL_HOST
+              value: keycloak-postgres
+            - name: KC_DB_URL_PORT
+              value: "5432"
+            - name: KC_DB_URL_DATABASE
+              value: keycloak
+            - name: KC_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db
+                  key: username
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db
+                  key: password
+
+            # Reverse-proxy headers (Ingress)
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: "xforwarded"
+            - name: KC_PROXY
+              value: "edge"
+            - name: KC_HOSTNAME
+              value: "keycloak.${BASE_DOMAIN}"
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  namespace: spark
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ${KEYCLOAK_HOST}.${BASE_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 80

@@ -1,0 +1,16 @@
+# not in use, its a legacy file, for history
+auth:
+  adminUser: admin
+  existingSecret: spark-keycloak-credentials
+  passwordSecretKey: KEYCLOAK_ADMIN_PASSWORD
+
+postgresql:
+  enabled: true
+
+proxyHeaders: "xforwarded"
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hostname: keycloak.127.0.0.1.nip.io
+  tls: false

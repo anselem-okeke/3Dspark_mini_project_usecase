@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: keycloak-bootstrap
+  namespace: spark
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: keycloak-bootstrap
+  namespace: spark
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: keycloak-bootstrap
+  namespace: spark
+subjects:
+  - kind: ServiceAccount
+    name: keycloak-bootstrap
+    namespace: spark
+roleRef:
+  kind: Role
+  name: keycloak-bootstrap
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,194 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-bootstrap
+  namespace: spark
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      serviceAccountName: keycloak-bootstrap
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: alpine:3.20
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KEYCLOAK_URL
+              value: "http://keycloak.spark.svc.cluster.local"
+            - name: KEYCLOAK_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin
+                  key: username
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin
+                  key: password
+            - name: KEYCLOAK_REALM
+              valueFrom:
+                secretKeyRef:
+                  name: spark-bootstrap
+                  key: realm
+            - name: BASE_DOMAIN
+              valueFrom:
+                secretKeyRef:
+                  name: spark-bootstrap
+                  key: base_domain
+            - name: DEMO_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: spark-bootstrap
+                  key: demo_host
+            - name: DEMO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: spark-bootstrap
+                  key: demo_user
+            - name: DEMO_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: spark-bootstrap
+                  key: demo_user_password
+          command: ["/bin/sh","-lc"]
+          args:
+            - |
+              set -euo pipefail
+              apk add --no-cache curl jq kubectl
+
+              echo "[bootstrap] waiting for keycloak..."
+              READY=0
+              for i in $(seq 1 180); do
+                code="$(curl -s -o /dev/null -w "%{http_code}" "${KEYCLOAK_URL}/realms/master" || true)"
+                echo "  master realm probe -> ${code}"
+                if [ "${code}" = "200" ]; then
+                  READY=1
+                  break
+                fi
+                sleep 2
+              done
+
+              if [ "${READY}" -ne 1 ]; then
+                echo "ERROR: Keycloak did not become ready at ${KEYCLOAK_URL}"
+                exit 1
+              fi
+
+              echo "[bootstrap] get admin token..."
+              resp="$(curl -sS -X POST "${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token" \
+                -H 'Content-Type: application/x-www-form-urlencoded' \
+                --data-urlencode "username=${KEYCLOAK_ADMIN}" \
+                --data-urlencode "password=${KEYCLOAK_ADMIN_PASSWORD}" \
+                --data-urlencode "grant_type=password" \
+                --data-urlencode "client_id=admin-cli" || true)"
+
+              echo "  token raw response: ${resp}"
+
+              TOKEN="$(echo "${resp}" | jq -r '.access_token // empty')"
+              if [ -z "${TOKEN}" ]; then
+                echo "ERROR: Failed to obtain admin token from Keycloak (check creds/URL)."
+                exit 1
+              fi
+
+              AUTHZ="Authorization: Bearer ${TOKEN}"
+              REALM="${KEYCLOAK_REALM}"
+              PUBLIC_DEMO_FQDN="${DEMO_HOST}.${BASE_DOMAIN}"
+              PUBLIC_DEMO_URL="http://${PUBLIC_DEMO_FQDN}"
+              REDIRECT_URI="${PUBLIC_DEMO_URL}/oauth2/callback"
+              WEB_ORIGIN="${PUBLIC_DEMO_URL}"
+              EMAIL="${DEMO_USER}@example.com"
+
+              echo "[bootstrap] ensure realm ${REALM}..."
+              if curl -fsS -H "${AUTHZ}" "${KEYCLOAK_URL}/admin/realms/${REALM}" >/dev/null 2>&1; then
+                echo "  realm exists"
+              else
+                curl -fsS -H "${AUTHZ}" -H "Content-Type: application/json" \
+                  -X POST "${KEYCLOAK_URL}/admin/realms" \
+                  -d "{\"realm\":\"${REALM}\",\"enabled\":true}" >/dev/null
+                echo "  realm created"
+              fi
+
+              echo "[bootstrap] ensure client oauth2-proxy..."
+              EXISTING="$(curl -fsS -H "${AUTHZ}" "${KEYCLOAK_URL}/admin/realms/${REALM}/clients?clientId=oauth2-proxy" | jq -r '.[0].id // empty')"
+              if [ -z "${EXISTING}" ]; then
+                curl -fsS -H "${AUTHZ}" -H "Content-Type: application/json" \
+                  -X POST "${KEYCLOAK_URL}/admin/realms/${REALM}/clients" \
+                  -d "{
+                    \"clientId\":\"oauth2-proxy\",
+                    \"enabled\":true,
+                    \"protocol\":\"openid-connect\",
+                    \"publicClient\":false,
+                    \"standardFlowEnabled\":true,
+                    \"directAccessGrantsEnabled\":true,
+                    \"redirectUris\":[\"${REDIRECT_URI}\"],
+                    \"webOrigins\":[\"${WEB_ORIGIN}\"]
+                  }" >/dev/null
+                echo "  client created"
+              else
+                echo "  client exists"
+              fi
+
+              CLIENT_ID="$(curl -fsS -H "${AUTHZ}" "${KEYCLOAK_URL}/admin/realms/${REALM}/clients?clientId=oauth2-proxy" | jq -r '.[0].id')"
+
+              echo "[bootstrap] enforce client redirectUris/webOrigins..."
+              curl -fsS -H "${AUTHZ}" -H "Content-Type: application/json" \
+                -X PUT "${KEYCLOAK_URL}/admin/realms/${REALM}/clients/${CLIENT_ID}" \
+                -d "{
+                  \"clientId\":\"oauth2-proxy\",
+                  \"enabled\":true,
+                  \"protocol\":\"openid-connect\",
+                  \"publicClient\":false,
+                  \"standardFlowEnabled\":true,
+                  \"directAccessGrantsEnabled\":true,
+                  \"redirectUris\":[\"${REDIRECT_URI}\"],
+                  \"webOrigins\":[\"${WEB_ORIGIN}\"]
+                }" >/dev/null
+
+              echo "[bootstrap] generate client secret..."
+              CLIENT_SECRET="$(curl -fsS -H "${AUTHZ}" -X POST "${KEYCLOAK_URL}/admin/realms/${REALM}/clients/${CLIENT_ID}/client-secret" | jq -r .value)"
+
+              echo "[bootstrap] create/update oauth2-proxy k8s secret..."
+
+              # Keep cookie secret stable across re-runs (avoids invalidating user sessions)
+              if kubectl -n "${NAMESPACE}" get secret oauth2-proxy-secret >/dev/null 2>&1; then
+                COOKIE_SECRET="$(kubectl -n "${NAMESPACE}" get secret oauth2-proxy-secret \
+                  -o jsonpath='{.data.OAUTH2_PROXY_COOKIE_SECRET}' | base64 -d)"
+              else
+                COOKIE_SECRET="$(head -c 32 /dev/urandom | base64 | tr -d '\n' | head -c 32)"
+              fi
+
+              kubectl -n "${NAMESPACE}" create secret generic oauth2-proxy-secret \
+                --from-literal=OAUTH2_PROXY_CLIENT_ID="oauth2-proxy" \
+                --from-literal=OAUTH2_PROXY_CLIENT_SECRET="${CLIENT_SECRET}" \
+                --from-literal=OAUTH2_PROXY_COOKIE_SECRET="${COOKIE_SECRET}" \
+                --dry-run=client -o yaml | kubectl apply -f -
+
+              echo "[bootstrap] ensure demo user ${DEMO_USER}..."
+              USER_ID="$(curl -fsS -H "${AUTHZ}" "${KEYCLOAK_URL}/admin/realms/${REALM}/users?username=${DEMO_USER}" | jq -r '.[0].id // empty')"
+
+              if [ -z "${USER_ID}" ]; then
+                curl -fsS -H "${AUTHZ}" -H "Content-Type: application/json" \
+                  -X POST "${KEYCLOAK_URL}/admin/realms/${REALM}/users" \
+                  -d "{\"username\":\"${DEMO_USER}\",\"enabled\":true,\"email\":\"${EMAIL}\",\"emailVerified\":true,\"requiredActions\":[]}" >/dev/null
+
+                USER_ID="$(curl -fsS -H "${AUTHZ}" "${KEYCLOAK_URL}/admin/realms/${REALM}/users?username=${DEMO_USER}" | jq -r '.[0].id')"
+              fi
+
+              curl -fsS -H "${AUTHZ}" -H "Content-Type: application/json" \
+                -X PUT "${KEYCLOAK_URL}/admin/realms/${REALM}/users/${USER_ID}" \
+                -d "{\"email\":\"${EMAIL}\",\"emailVerified\":true,\"requiredActions\":[]}" >/dev/null
+
+              curl -fsS -H "${AUTHZ}" -H "Content-Type: application/json" \
+                -X PUT "${KEYCLOAK_URL}/admin/realms/${REALM}/users/${USER_ID}/reset-password" \
+                -d "{\"type\":\"password\",\"temporary\":false,\"value\":\"${DEMO_USER_PASSWORD}\"}" >/dev/null
+
+              kubectl -n "${NAMESPACE}" create secret generic spark-demo-user \
+                --from-literal=username="${DEMO_USER}" \
+                --from-literal=password="${DEMO_USER_PASSWORD}" \
+                --dry-run=client -o yaml | kubectl apply -f -
+
+              echo "[bootstrap] done"

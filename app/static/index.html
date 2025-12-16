@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudSync - Seamless Cloud Storage for Teams</title>
+    <link href="tooplate-cloud-sync-style.css" rel="stylesheet">
+    
+<!--
+
+Tooplate 2142 Cloud Sync
+
+https://www.tooplate.com/view/2142-cloud-sync
+
+Free HTML CSS Template
+
+-->
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">CloudSync</div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+                <a href="#" class="cta-button">Start Free Trial</a>
+            </div>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+            <a href="#" class="cta-button">Start Free Trial</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-backgrounds">
+            <div class="hero-bg"></div>
+            <div class="hero-bg"></div>
+            <div class="hero-bg"></div>
+        </div>
+        <div class="hero-content">
+            <h1>Cloud Storage That Scales With Your Team</h1>
+            <p class="hero-subtitle">Secure, fast, and intelligent file management for modern teams. Collaborate seamlessly across your organization.</p>
+            <a href="#" class="cta-button" style="font-size: 1.1rem; padding: 0.75rem 2rem;">Get Started Free</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="features-container">
+            <div class="features-header">
+                <h2>Everything You Need to Succeed</h2>
+                <p class="features-subtitle">Powerful features designed to streamline your workflow and boost productivity</p>
+            </div>
+            
+            <div class="features-layout">
+                <!-- Two Column Features -->
+                <div class="features-two-col">
+                    <div class="feature-card-large">
+                        <div class="feature-icon">🔒</div>
+                        <h3>Enterprise-Grade Security</h3>
+                        <p>Your data is protected with bank-level encryption, both in transit and at rest. We're compliant with SOC 2, GDPR, and HIPAA standards.</p>
+                        <ul class="feature-checklist">
+                            <li>256-bit AES encryption</li>
+                            <li>Two-factor authentication</li>
+                            <li>Regular security audits</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card-large">
+                        <div class="feature-icon">🤝</div>
+                        <h3>Real-time Collaboration</h3>
+                        <p>Work together seamlessly with your team. See changes as they happen with live editing, comments, and instant notifications.</p>
+                        <ul class="feature-checklist">
+                            <li>Live document editing</li>
+                            <li>Version control & rollback</li>
+                            <li>Team activity tracking</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Four Column Features -->
+                <div class="features-four-col">
+                    <div class="feature-card-small">
+                        <div class="feature-icon-small">🚀</div>
+                        <h4>Lightning Fast</h4>
+                        <p>Upload and access files instantly with our global CDN network.</p>
+                    </div>
+                    <div class="feature-card-small">
+                        <div class="feature-icon-small">📊</div>
+                        <h4>Advanced Analytics</h4>
+                        <p>Track usage patterns and optimize your workflow with detailed insights.</p>
+                    </div>
+                    <div class="feature-card-small">
+                        <div class="feature-icon-small">🔄</div>
+                        <h4>Smart Sync</h4>
+                        <p>Automatic syncing across all devices with conflict resolution.</p>
+                    </div>
+                    <div class="feature-card-small">
+                        <div class="feature-icon-small">🌐</div>
+                        <h4>API Integration</h4>
+                        <p>Connect with 1000+ apps through our powerful REST API.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <div class="pricing-header">
+            <h2>Pricing That Grows With You</h2>
+            <p class="hero-subtitle">Calculate your perfect plan based on your team size and storage needs</p>
+        </div>
+
+        <div class="pricing-calculator">
+            <div class="slider-container">
+                <div class="slider-label">
+                    <span>Team Members</span>
+                    <span id="teamSize">10</span>
+                </div>
+                <input type="range" class="slider" id="teamSlider" min="1" max="100" value="10">
+            </div>
+            <div class="slider-container">
+                <div class="slider-label">
+                    <span>Storage (GB)</span>
+                    <span id="storageSize">500</span>
+                </div>
+                <input type="range" class="slider" id="storageSlider" min="100" max="5000" step="100" value="500">
+            </div>
+        </div>
+
+        <div class="pricing-cards">
+            <div class="pricing-card">
+                <h3 class="plan-name">Starter</h3>
+                <div class="plan-price">$<span id="starterPrice">29</span><span>/month</span></div>
+                <ul class="plan-features">
+                    <li>Up to 10 team members</li>
+                    <li>100 GB storage</li>
+                    <li>Basic collaboration tools</li>
+                    <li>Email support</li>
+                </ul>
+                <a href="#" class="cta-button">Choose Starter</a>
+            </div>
+
+            <div class="pricing-card popular">
+                <h3 class="plan-name">Professional</h3>
+                <div class="plan-price">$<span id="proPrice">149</span><span>/month</span></div>
+                <ul class="plan-features">
+                    <li>Up to 50 team members</li>
+                    <li>1 TB storage</li>
+                    <li>Advanced collaboration</li>
+                    <li>Priority support</li>
+                    <li>API access</li>
+                </ul>
+                <a href="#" class="cta-button">Choose Professional</a>
+            </div>
+
+            <div class="pricing-card">
+                <h3 class="plan-name">Enterprise</h3>
+                <div class="plan-price">$<span id="enterprisePrice">299</span><span>/month</span></div>
+                <ul class="plan-features">
+                    <li>Unlimited team members</li>
+                    <li>Unlimited storage</li>
+                    <li>Custom integrations</li>
+                    <li>24/7 phone support</li>
+                    <li>Dedicated account manager</li>
+                </ul>
+                <a href="#" class="cta-button">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="about-container">
+            <div class="about-content">
+                <h2>Trusted by 10,000+ Teams Worldwide</h2>
+                <p class="about-subtitle">Since 2020, we've been on a mission to revolutionize how teams collaborate and manage their digital assets.</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">99.9%</div>
+                        <div class="stat-label">Uptime SLA</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">150+</div>
+                        <div class="stat-label">Countries Served</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">2M+</div>
+                        <div class="stat-label">Files Synced Daily</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Customer Support</div>
+                    </div>
+                </div>
+
+                <div class="about-text">
+                    <p>CloudSync was born from a simple frustration: existing cloud storage solutions were either too complex for small teams or too limited for growing businesses. We built CloudSync to be the perfect balance - powerful enough for enterprises, simple enough for startups.</p>
+                    <p>Our team of security experts, designers, and engineers work tirelessly to ensure your data is not just stored, but protected, organized, and always accessible when you need it most. CloudSync HTML Template is free to use for any purpose. You may download it from <a href="#">Tooplate</a> website. Images are from <a href="#">Unsplash</a> website.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact" id="contact">
+        <div class="contact-container">
+            <div class="contact-header">
+                <h2>Get in Touch</h2>
+                <p class="contact-subtitle">Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+            </div>
+
+            <div class="contact-content">
+                <div class="contact-form-wrapper">
+                    <div class="form-header">
+                        <h3>Send us a Message</h3>
+                        <p>Fill out the form below and our team will get back to you within 24 hours.</p>
+                    </div>
+                    <form id="contactForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">Full Name</label>
+                                <input type="text" id="name" placeholder="John Doe" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" placeholder="john@example.com" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="company">Company Name</label>
+                            <input type="text" id="company" placeholder="Your Company (Optional)">
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">How can we help?</label>
+                            <select id="subject">
+                                <option value="">Select a Topic</option>
+                                <option value="sales">Sales Inquiry</option>
+                                <option value="support">Technical Support</option>
+                                <option value="partnership">Partnership</option>
+                                <option value="demo">Request a Demo</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" rows="9" placeholder="Tell us more about your needs..." required></textarea>
+                        </div>
+                        <button type="submit" class="submit-button">Send Message</button>
+                    </form>
+                </div>
+
+                <div class="contact-info">
+                    <div class="quick-contact">
+                        <h3>Quick Contact</h3>
+                        <div class="contact-methods">
+                            <a href="mailto:support@cloudsync.com" class="contact-method">
+                                <span class="method-icon">📧</span>
+                                <div class="method-details">
+                                    <strong>Email Us</strong>
+                                    <span>support@cloudsync.com</span>
+                                </div>
+                            </a>
+                            <a href="#" class="contact-method">
+                                <span class="method-icon">💬</span>
+                                <div class="method-details">
+                                    <strong>Live Chat</strong>
+                                    <span>Available 9AM-6PM EST</span>
+                                </div>
+                            </a>
+                            <a href="tel:+15551234567" class="contact-method">
+                                <span class="method-icon">📱</span>
+                                <div class="method-details">
+                                    <strong>Call Us</strong>
+                                    <span>+1 (555) 123-4567</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="office-locations">
+                        <h3>Our Offices</h3>
+                        <div class="location-grid">
+                            <div class="location">
+                                <strong>🇺🇸 San Francisco</strong>
+                                <p>123 Market Street<br>Suite 400, CA 94105</p>
+                            </div>
+                            <div class="location">
+                                <strong>🇬🇧 London</strong>
+                                <p>45 Fleet Street<br>London EC4Y 1BJ</p>
+                            </div>
+                            <div class="location">
+                                <strong>🇸🇬 Singapore</strong>
+                                <p>1 Raffles Place<br>Tower 1, #40-02</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">CloudSync</div>
+                    <p>Secure cloud storage for modern teams</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <a href="#">Features</a>
+                        <a href="#">Pricing</a>
+                        <a href="#">Security</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <a href="#">About Us</a>
+                        <a href="#">Careers</a>
+                        <a href="#">Press</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <a href="#">Documentation</a>
+                        <a href="#">API Reference</a>
+                        <a href="#">Blog</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 CloudSync. All rights reserved. | Designed by <a href="https://www.tooplate.com" target="_blank" rel="nofollow noopener">Tooplate</a></p>
+                <div class="social-links">
+                    <a href="#">Twitter</a>
+                    <a href="#">LinkedIn</a>
+                    <a href="#">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+<script src="tooplate-cloud-scripts.js"></script>
+</body>
+</html>
