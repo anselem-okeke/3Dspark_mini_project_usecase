@@ -3,34 +3,35 @@ SHELL := /usr/bin/env bash
 .PHONY: up down redeploy kind-up kind-down install uninstall health check deps-ubuntu fix-perms
 
 fix-perms:
-	@chmod +x scripts/*.sh || true
+	@chmod +x scripts/*.sh 2>/dev/null || true
 
-up: fix-perms check kind-up install health
+check: fix-perms
+	@./scripts/check-deps.sh || ( $(MAKE) deps-ubuntu && ./scripts/check-deps.sh )
+
+deps-ubuntu: fix-perms
+	@./scripts/deps-ubuntu.sh
+
+up: check kind-up install health
 	@echo "one-click done (make up)"
 
 down: fix-perms uninstall kind-down
 	@echo "removed (make down)"
 
-redeploy: fix-perms check uninstall install health
+redeploy: fix-perms uninstall install health
 	@echo "redeployed"
 
-check:
-	./scripts/check-deps.sh || ( $(MAKE) deps-ubuntu && ./scripts/check-deps.sh )
+kind-up: fix-perms
+	@./scripts/kind-up.sh
 
-deps-ubuntu:
-	./scripts/deps-ubuntu.sh
+kind-down: fix-perms
+	@./scripts/kind-down.sh
 
-kind-up:
-	./scripts/kind-up.sh
+install: fix-perms
+	@./scripts/install.sh
 
-kind-down:
-	./scripts/kind-down.sh
+uninstall: fix-perms
+	@./scripts/uninstall.sh
 
-install:
-	./scripts/install.sh
+health: fix-perms
+	@./scripts/healthcheck.sh
 
-uninstall:
-	./scripts/uninstall.sh
-
-health:
-	./scripts/healthcheck.sh
