@@ -1,14 +1,17 @@
 SHELL := /usr/bin/env bash
 
-.PHONY: up down redeploy kind-up kind-down install uninstall health
+.PHONY: up down redeploy kind-up kind-down install uninstall health check deps-ubuntu fix-perms
 
-up: kind-up install health
+fix-perms:
+	@chmod +x scripts/*.sh || true
+
+up: fix-perms check kind-up install health
 	@echo "one-click done (make up)"
 
-down: uninstall kind-down
+down: fix-perms uninstall kind-down
 	@echo "removed (make down)"
 
-redeploy: uninstall install health
+redeploy: fix-perms check uninstall install health
 	@echo "redeployed"
 
 check:
