@@ -1,36 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-need() { command -v "$1" >/dev/null 2>&1 || { echo "[deps] Missing dependency: $1"; exit 1; }; }
+fail() { echo "[deps] ERROR: $*" >&2; exit 1; }
+ok()   { echo "[deps] $*"; }
 
-# cluster/runtime
-need docker
-need kind
+need() { command -v "$1" >/dev/null 2>&1 || fail "missing '$1'"; }
 
-# k8s tooling
-need kubectl
-need helm
-
-# templating/utils most scripts rely on it
-need envsubst
-need sed
+need bash
 need curl
 need jq
+need envsubst
+need sed
+need docker
+need kubectl
+need helm
+need kind
 
-# 1) Docker must support --format (kind relies on it)
+# Docker must support --format (kind requires it)
 if ! docker ps --format '{{.ID}}' >/dev/null 2>&1; then
-  echo "[deps] ERROR: your docker CLI does not support --format (kind requires modern docker-ce)."
-  echo "[deps] Fix: run: make deps-ubuntu"
-  exit 1
+  fail "your docker CLI does not support --format (kind requires modern docker-ce / docker.io). Run: make deps-ubuntu"
 fi
 
-# 2) Docker daemon must be reachable as current user (no sudo)
+# Docker daemon must be reachable
 if ! docker info >/dev/null 2>&1; then
-  echo "[deps] ERROR: cannot talk to Docker daemon as current user."
-  echo "[deps] Fix: run: sudo usermod -aG docker $USER && newgrp docker"
-  echo "[deps] (or log out/in) then re-run: make up"
-  exit 1
+  fail "docker daemon not reachable. If you just installed docker: 'sudo usermod -aG docker $USER' then re-login (or 'newgrp docker')."
 fi
 
-echo "[deps] all required tools are installed"
+ok "all required tools are installed and docker is compatible with kind"
 
